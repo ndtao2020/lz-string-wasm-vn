@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en-US">
+
+<head>
+    <meta charset="utf-8" />
+    <title>example</title>
+</head>
+
+<body>
+    <script type="module">
+        import init, { compressToUTF16, decompressFromUTF16 } from "./pkg/web/lz_string_wasm_vn.js";
+
+        init().then(() => {
+            const data = "This feature will replace some internal maps' hashers with rustc-hash, boosting performance at the cost of not using a DOS-resistant hasher."
+
+            const compressed = compressToUTF16(data);
+            const decompressed = decompressFromUTF16(compressed);
+
+            console.log("data: ", data);
+            console.log("compressed: ", compressed);
+            console.log("decompressed: ", decompressed);
+
+            if (data === decompressed) {
+                console.log('Ok !');
+            }
+        });
+    </script>
+</body>
+
+</html>
