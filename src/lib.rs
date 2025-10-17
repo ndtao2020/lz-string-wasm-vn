@@ -10,7 +10,7 @@ extern "C" {
 }
 
 // ========================================= [HELPER] =========================================
-fn to_utf16(decompressed_bytes: &Vec<u16>) -> Result<String, JsValue> {
+fn from_utf16(decompressed_bytes: &Vec<u16>) -> Result<String, JsValue> {
     match String::from_utf16(&decompressed_bytes) {
         Ok(s) => Ok(s),
         Err(e) => {
@@ -24,9 +24,8 @@ fn to_utf16(decompressed_bytes: &Vec<u16>) -> Result<String, JsValue> {
 // ========================================= [COMPRESS] =========================================
 /// Compresses a string to UTF-16
 #[wasm_bindgen]
-pub fn compress(input: &str) -> Result<String, JsValue> {
-    let compressed_bytes: Vec<u16> = lz_str::compress(input);
-    to_utf16(&compressed_bytes)
+pub fn compress(input: &str) -> Vec<u16> {
+    lz_str::compress(input)
 }
 
 #[wasm_bindgen(js_name = compressToUTF16)]
@@ -51,12 +50,12 @@ pub fn compress_to_uint8_array(input: &str) -> Vec<u8> {
 // ========================================= [DECOMPRESS] =========================================
 /// Decompresses a UTF-16 LZ-String
 #[wasm_bindgen]
-pub fn decompress(compressed: &str) -> Result<String, JsValue> {
-    let decompressed_bytes: Option<Vec<u16>> = lz_str::decompress(&compressed);
+pub fn decompress(compressed: &[u16]) -> Result<Vec<u16>, JsValue> {
+    let decompressed_bytes: Option<Vec<u16>> = lz_str::decompress(compressed);
     if decompressed_bytes.is_none() {
         return Err(JsValue::from_str(&format!("Decompression failed !")));
     }
-    to_utf16(&decompressed_bytes.unwrap())
+    Ok(decompressed_bytes.unwrap())
 }
 
 #[wasm_bindgen(js_name = decompressFromUTF16)]
@@ -65,7 +64,7 @@ pub fn decompress_from_utf16(compressed: &str) -> Result<String, JsValue> {
     if decompressed_bytes.is_none() {
         return Err(JsValue::from_str(&format!("Decompression failed !")));
     }
-    to_utf16(&decompressed_bytes.unwrap())
+    from_utf16(&decompressed_bytes.unwrap())
 }
 
 #[wasm_bindgen(js_name = decompressFromEncodedURIComponent)]
@@ -75,7 +74,7 @@ pub fn decompress_from_encoded_uri_component(compressed: &str) -> Result<String,
     if decompressed_bytes.is_none() {
         return Err(JsValue::from_str(&format!("Decompression failed !")));
     }
-    to_utf16(&decompressed_bytes.unwrap())
+    from_utf16(&decompressed_bytes.unwrap())
 }
 
 #[wasm_bindgen(js_name = decompressFromBase64)]
@@ -84,7 +83,7 @@ pub fn decompress_from_base64(compressed: &str) -> Result<String, JsValue> {
     if decompressed_bytes.is_none() {
         return Err(JsValue::from_str(&format!("Decompression failed !")));
     }
-    to_utf16(&decompressed_bytes.unwrap())
+    from_utf16(&decompressed_bytes.unwrap())
 }
 
 #[wasm_bindgen(js_name = decompressFromUint8Array)]
@@ -93,7 +92,7 @@ pub fn decompress_from_uint8_array(compressed: &[u8]) -> Result<String, JsValue>
     if decompressed_bytes.is_none() {
         return Err(JsValue::from_str(&format!("Decompression failed !")));
     }
-    to_utf16(&decompressed_bytes.unwrap())
+    from_utf16(&decompressed_bytes.unwrap())
 }
 
 #[cfg(test)]
@@ -103,9 +102,9 @@ mod tests {
     #[test]
     fn test_compress_decompress() {
         let original = "Hello, World! This is a test string for LZ-String compression.";
-        let compressed = compress(original).unwrap();
+        let compressed = compress(original);
         let decompressed = decompress(&compressed).unwrap();
-        assert_eq!(original, decompressed);
+        assert_eq!(original, from_utf16(&decompressed).unwrap());
     }
 
     #[test]

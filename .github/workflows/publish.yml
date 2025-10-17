@@ -40,8 +40,6 @@ jobs:
         run: cargo test
 
       - name: Build packages
-        env:
-          RUST_LOG: debug
         run: chmod +x build.sh && ./build.sh
 
       - name: Authenticate with npm

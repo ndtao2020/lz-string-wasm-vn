@@ -3,9 +3,11 @@
 set -e
 
 PROJECT_NAME="lz_string_wasm_vn"
-WASM_TARGET="target/wasm32-unknown-unknown/release/${PROJECT_NAME}.wasm"
 PKG_DIR="./pkg"
+WASM_TARGET="target/wasm32-unknown-unknown/release/${PROJECT_NAME}.wasm"
+FLAGS="-C target-feature=+simd128"
 
+# RUSTFLAGS='-C target-feature=+simd128' ./build.sh
 echo "🔨 Building ${PROJECT_NAME}..."
 
 # Check if wasm-bindgen is installed
@@ -21,7 +23,7 @@ mkdir -p "${PKG_DIR}"/{deno,nodejs,bundler,web}
 
 # Build Rust to WASM
 echo "🦀 Compiling Rust to WASM..."
-cargo build --target wasm32-unknown-unknown --release
+RUSTFLAGS="$FLAGS" cargo build --target wasm32-unknown-unknown --release
 
 # Check if WASM file was created
 if [ ! -f "${WASM_TARGET}" ]; then
