@@ -5,7 +5,7 @@
         "ndtao2020"
     ],
     "description": "LZ-String compression for WebAssembly",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "license": "MIT License",
     "repository": {
         "type": "git",
@@ -14,6 +14,9 @@
     "files": [
         "web/",
         "deno/",
+        "esm/",
+        "module/",
+        "no-modules/",
         "nodejs/",
         "bundler/"
     ],
@@ -32,6 +35,21 @@
             "types": "./deno/lz_string_wasm_vn.d.ts",
             "require": "./deno/lz_string_wasm_vn.js",
             "import": "./deno/lz_string_wasm_vn.js"
+        },
+        "./esm": {
+            "types": "./esm/lz_string_wasm_vn.d.ts",
+            "require": "./esm/lz_string_wasm_vn.js",
+            "import": "./esm/lz_string_wasm_vn.js"
+        },
+        "./module": {
+            "types": "./module/lz_string_wasm_vn.d.ts",
+            "require": "./module/lz_string_wasm_vn.js",
+            "import": "./module/lz_string_wasm_vn.js"
+        },
+        "./no-modules": {
+            "types": "./no-modules/lz_string_wasm_vn.d.ts",
+            "require": "./no-modules/lz_string_wasm_vn.js",
+            "import": "./no-modules/lz_string_wasm_vn.js"
         },
         "./nodejs": {
             "types": "./nodejs/lz_string_wasm_vn.d.ts",

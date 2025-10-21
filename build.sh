@@ -4,10 +4,10 @@ set -e
 
 PROJECT_NAME="lz_string_wasm_vn"
 PKG_DIR="./pkg"
-WASM_TARGET="target/wasm32-unknown-unknown/release/${PROJECT_NAME}.wasm"
-FLAGS="-C target-feature=+simd128"
+TARGET_BUILD="wasm32-unknown-unknown"
+WASM_TARGET="target/${TARGET_BUILD}/release/${PROJECT_NAME}.wasm"
+FLAGS="-C target-feature=+simd128,+bulk-memory"
 
-# RUSTFLAGS='-C target-feature=+simd128' ./build.sh
 echo "🔨 Building ${PROJECT_NAME}..."
 
 # Check if wasm-bindgen is installed
@@ -19,11 +19,10 @@ fi
 # Clean and create directories
 echo "📁 Setting up directories..."
 rm -rf "${PKG_DIR}"
-mkdir -p "${PKG_DIR}"/{deno,nodejs,bundler,web}
 
 # Build Rust to WASM
 echo "🦀 Compiling Rust to WASM..."
-RUSTFLAGS="$FLAGS" cargo build --target wasm32-unknown-unknown --release
+RUSTFLAGS="$FLAGS" cargo build --target ${TARGET_BUILD} --release
 
 # Check if WASM file was created
 if [ ! -f "${WASM_TARGET}" ]; then
@@ -35,8 +34,8 @@ fi
 # Generate bindings for different targets
 echo "📦 Generating bindings for different targets..."
 
-echo "  🌐 Web target..."
-wasm-bindgen --target web --out-dir "${PKG_DIR}/web" "${WASM_TARGET}"
+echo "  📦 Bundler target..."
+wasm-bindgen --target bundler --out-dir "${PKG_DIR}/bundler" "${WASM_TARGET}"
 
 echo "  🦕 Deno target..."
 wasm-bindgen --target deno --out-dir "${PKG_DIR}/deno" "${WASM_TARGET}"
@@ -44,8 +43,17 @@ wasm-bindgen --target deno --out-dir "${PKG_DIR}/deno" "${WASM_TARGET}"
 echo "  📟 Node.js target..."
 wasm-bindgen --target nodejs --out-dir "${PKG_DIR}/nodejs" "${WASM_TARGET}"
 
-echo "  📦 Bundler target..."
-wasm-bindgen --target bundler --out-dir "${PKG_DIR}/bundler" "${WASM_TARGET}"
+echo "  📟 Node.js (ESM) target..."
+wasm-bindgen --target experimental-nodejs-module --out-dir "${PKG_DIR}/esm" "${WASM_TARGET}"
+
+echo "  📦 Module target..."
+wasm-bindgen --target module --out-dir "${PKG_DIR}/module" "${WASM_TARGET}"
+
+echo "  📦 No-modules target..."
+wasm-bindgen --target no-modules --out-dir "${PKG_DIR}/no-modules" "${WASM_TARGET}"
+
+echo "  🌐 Web target..."
+wasm-bindgen --target web --out-dir "${PKG_DIR}/web" "${WASM_TARGET}"
 
 # Copy package files
 echo "📄 Copying package files..."
@@ -59,11 +67,17 @@ echo "*" > "${PKG_DIR}/.gitignore"
 # Optimize WASM
 echo "⚡ Optimizing WASM..."
 
+WASM_SUFFIX="_bg.wasm"
+WASM_OTPS="-Os --converge --enable-bulk-memory --inline-functions-with-loops"
+
 if command -v wasm-opt &> /dev/null; then
-    wasm-opt -Oz --enable-bulk-memory "${PKG_DIR}/web/${PROJECT_NAME}_bg.wasm" -o "${PKG_DIR}/web/${PROJECT_NAME}_bg.wasm"
-    wasm-opt -Oz --enable-bulk-memory "${PKG_DIR}/deno/${PROJECT_NAME}_bg.wasm" -o "${PKG_DIR}/deno/${PROJECT_NAME}_bg.wasm"
-    wasm-opt -Oz --enable-bulk-memory "${PKG_DIR}/nodejs/${PROJECT_NAME}_bg.wasm" -o "${PKG_DIR}/nodejs/${PROJECT_NAME}_bg.wasm"
-    wasm-opt -Oz --enable-bulk-memory "${PKG_DIR}/bundler/${PROJECT_NAME}_bg.wasm" -o "${PKG_DIR}/bundler/${PROJECT_NAME}_bg.wasm"
+    wasm-opt ${WASM_OTPS} "${PKG_DIR}/bundler/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/bundler/${PROJECT_NAME}${WASM_SUFFIX}"
+    wasm-opt ${WASM_OTPS} "${PKG_DIR}/deno/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/deno/${PROJECT_NAME}${WASM_SUFFIX}"
+    wasm-opt ${WASM_OTPS} "${PKG_DIR}/esm/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/esm/${PROJECT_NAME}${WASM_SUFFIX}"
+    wasm-opt ${WASM_OTPS} "${PKG_DIR}/module/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/module/${PROJECT_NAME}${WASM_SUFFIX}"
+    wasm-opt ${WASM_OTPS} "${PKG_DIR}/no-modules/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/no-modules/${PROJECT_NAME}${WASM_SUFFIX}"
+    wasm-opt ${WASM_OTPS} "${PKG_DIR}/nodejs/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/nodejs/${PROJECT_NAME}${WASM_SUFFIX}"
+    wasm-opt ${WASM_OTPS} "${PKG_DIR}/web/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/web/${PROJECT_NAME}${WASM_SUFFIX}"
     echo "✅ WASM optimized with bulk memory"
 else
     echo "⚠️  wasm-opt not found, skipping optimization"
@@ -72,10 +86,10 @@ fi
 
 # Verify outputs
 echo "🔍 Verifying outputs..."
-for target in "/web" "/deno" "/nodejs" "/bundler"; do
-    if [ -f "${PKG_DIR}${target}/${PROJECT_NAME}_bg.wasm" ]; then
-        wasm_size=$(stat -f%z "${PKG_DIR}${target}/${PROJECT_NAME}_bg.wasm" 2>/dev/null || stat -c%s "${PKG_DIR}${target}/${PROJECT_NAME}_bg.wasm")
-        echo "  ✓${target:- /web}: ${wasm_size} bytes"
+for target in "/bundler" "/deno" "/esm" "/module" "/no-modules" "/nodejs" "/web"; do
+    if [ -f "${PKG_DIR}${target}/${PROJECT_NAME}${WASM_SUFFIX}" ]; then
+        wasm_size=$(stat -f%z "${PKG_DIR}${target}/${PROJECT_NAME}${WASM_SUFFIX}" 2>/dev/null || stat -c%s "${PKG_DIR}${target}/${PROJECT_NAME}${WASM_SUFFIX}")
+        echo "  ✓${target}: ${wasm_size} bytes"
     else
         echo "  ❌${target}: WASM file missing"
     fi
