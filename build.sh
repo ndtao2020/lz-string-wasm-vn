@@ -6,7 +6,7 @@ PROJECT_NAME="lz_string_wasm_vn"
 PKG_DIR="./pkg"
 TARGET_BUILD="wasm32-unknown-unknown"
 WASM_TARGET="target/${TARGET_BUILD}/release/${PROJECT_NAME}.wasm"
-FLAGS="-C target-feature=+simd128,+bulk-memory"
+FLAGS="--remap-path-prefix $(pwd)=. -C target-feature=+simd128,+bulk-memory"
 
 echo "🔨 Building ${PROJECT_NAME}..."
 
@@ -34,26 +34,29 @@ fi
 # Generate bindings for different targets
 echo "📦 Generating bindings for different targets..."
 
+# https://wasm-bindgen.github.io/wasm-bindgen/reference/cli.html
+WASM_BINDGEN_OTPS="--typescript --no-demangle --split-linked-modules"
+
 echo "  📦 Bundler target..."
-wasm-bindgen --target bundler --out-dir "${PKG_DIR}/bundler" "${WASM_TARGET}"
+wasm-bindgen ${WASM_BINDGEN_OTPS} --target bundler --out-dir "${PKG_DIR}/bundler" "${WASM_TARGET}"
 
 echo "  🦕 Deno target..."
-wasm-bindgen --target deno --out-dir "${PKG_DIR}/deno" "${WASM_TARGET}"
+wasm-bindgen ${WASM_BINDGEN_OTPS} --target deno --out-dir "${PKG_DIR}/deno" "${WASM_TARGET}"
 
 echo "  📟 Node.js target..."
-wasm-bindgen --target nodejs --out-dir "${PKG_DIR}/nodejs" "${WASM_TARGET}"
+wasm-bindgen ${WASM_BINDGEN_OTPS} --target nodejs --out-dir "${PKG_DIR}/nodejs" "${WASM_TARGET}"
 
 echo "  📟 Node.js (ESM) target..."
-wasm-bindgen --target experimental-nodejs-module --out-dir "${PKG_DIR}/esm" "${WASM_TARGET}"
+wasm-bindgen ${WASM_BINDGEN_OTPS} --target experimental-nodejs-module --out-dir "${PKG_DIR}/esm" "${WASM_TARGET}"
 
 echo "  📦 Module target..."
-wasm-bindgen --target module --out-dir "${PKG_DIR}/module" "${WASM_TARGET}"
+wasm-bindgen ${WASM_BINDGEN_OTPS} --target module --out-dir "${PKG_DIR}/module" "${WASM_TARGET}"
 
 echo "  📦 No-modules target..."
-wasm-bindgen --target no-modules --out-dir "${PKG_DIR}/no-modules" "${WASM_TARGET}"
+wasm-bindgen ${WASM_BINDGEN_OTPS} --target no-modules --out-dir "${PKG_DIR}/no-modules" "${WASM_TARGET}"
 
 echo "  🌐 Web target..."
-wasm-bindgen --target web --out-dir "${PKG_DIR}/web" "${WASM_TARGET}"
+wasm-bindgen ${WASM_BINDGEN_OTPS} --target web --out-dir "${PKG_DIR}/web" "${WASM_TARGET}"
 
 # Copy package files
 echo "📄 Copying package files..."
@@ -68,7 +71,7 @@ echo "*" > "${PKG_DIR}/.gitignore"
 echo "⚡ Optimizing WASM..."
 
 WASM_SUFFIX="_bg.wasm"
-WASM_OTPS="-Os --converge --enable-bulk-memory --inline-functions-with-loops"
+WASM_OTPS="-Os --converge --enable-simd --enable-bulk-memory --inline-functions-with-loops"
 
 if command -v wasm-opt &> /dev/null; then
     wasm-opt ${WASM_OTPS} "${PKG_DIR}/bundler/${PROJECT_NAME}${WASM_SUFFIX}" -o "${PKG_DIR}/bundler/${PROJECT_NAME}${WASM_SUFFIX}"
