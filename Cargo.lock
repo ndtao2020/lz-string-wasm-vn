@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "alloc_cat"
-version = "1.0.0"
+version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81bf4426d8bb5e04f1d68762f18d1b4d484e7fd8e9e19d48f633c459ca99fe94"
+checksum = "df692f1c245552b54ab8af4079a741c7cde491d9210db67b8ef2f3597bb3bc58"
 dependencies = [
  "arr_macro",
  "cfg-if",
