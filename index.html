@@ -3,27 +3,61 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>example</title>
+    <title>LZString</title>
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
 </head>
 
 <body>
     <script type="module">
+        import { Bench } from 'https://cdn.jsdelivr.net/npm/tinybench@6.0.0/dist/index.min.js'
         import init, { compressToUTF16, decompressFromUTF16 } from "./pkg/web/lz_string_wasm_vn.js";
 
-        init().then(() => {
-            const data = "This feature will replace some internal maps' hashers with rustc-hash, boosting performance at the cost of not using a DOS-resistant hasher."
+        // --- Init WASM once ---
+        await init();
 
-            const compressed = compressToUTF16(data);
-            const decompressed = decompressFromUTF16(compressed);
+        const data = `
+        To find information about a command, on the A-Z button menu at the top of this page, click the letter that the command starts with, and then click the command name.
+        In addition to the tools installed with Windows XP, there are over 40 support tools included on the Windows XP CD. You can use these tools to diagnose and resolve computer problems. 
+        For more information about these support tools, see Windows Support Tools For information about installing support tools, see Install Windows Support Tools
+        For more information about changes to the functionality of MS-DOS commands, new command-line tools, command shell functionality, configuring the command prompt, 
+        and automating commmand-line tasks, see Command-line reference
+        Some command-line tools require the user to have administrator-level privileges on source and/or target computers.
+        Command-line tools must be run at the prompt of the Cmd.exe command interpreter. To open Command Prompt, click Start, click Run, type cmd, 
+        and then click OK. To view help at the command-line, at the command prompt, type the following
+        We're no longer updating this content regularly. Check the Microsoft Product Lifecycle for information about how this product, service, technology, or API is supported.
+        `;
 
-            console.log("data: ", data);
-            console.log("compressed: ", compressed);
-            console.log("decompressed: ", decompressed);
+        // Tests
+        const compressed = compressToUTF16(data);
+        const decompressed = decompressFromUTF16(compressed);
 
-            if (data === decompressed) {
-                console.log('Ok !');
-            }
-        });
+        console.log("data: ", data);
+        console.log("wasm compressed: ", compressed);
+        console.log("wasm decompressed: ", decompressed);
+
+        console.log("js compressed: ", LZString.compressToUTF16(data));
+        console.log("js decompressed: ", LZString.decompressFromUTF16(compressed));
+
+        console.assert(data === decompressed)
+
+        // --- Benchmark ---
+        const bench = new Bench({
+            name: 'Lz-String benchmark',
+            time: 200,
+        })
+
+        bench
+            // compress
+            .add('wasm compress', () => compressToUTF16(data))
+            .add('js compress', () => LZString.compressToUTF16(data))
+            // decompress
+            .add('wasm decompress', () => decompressFromUTF16(compressed))
+            .add('js decompress', () => LZString.decompressFromUTF16(compressed));
+
+        await bench.run()
+
+        console.log(bench.name)
+        console.table(bench.table())
     </script>
 </body>
 
